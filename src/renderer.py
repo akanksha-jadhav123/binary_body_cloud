@@ -3,10 +3,11 @@ import numpy as np
 import random
 
 class BinaryRenderer:
-    def __init__(self, width, height, density=12):
+    def __init__(self, width, height, density=10):
         self.width = width
         self.height = height
         self.density = density
+        self.frame_count = 0
         self.binary_texture = self._generate_binary_texture()
 
     def _generate_binary_texture(self):
@@ -19,12 +20,16 @@ class BinaryRenderer:
         for y in range(0, self.height, self.density):
             for x in range(0, self.width, self.density):
                 char = "1" if random.random() > 0.5 else "0"
-                # Removed cv2.LINE_AA for faster rendering
                 cv2.putText(canvas, char, (x, y), font, font_scale,
                             color, thickness, 1)
         return canvas
 
     def apply_effect(self, frame, mask):
+        # Flicker effect: Regenerate texture every 5 frames
+        self.frame_count += 1
+        if self.frame_count % 5 == 0:
+            self.binary_texture = self._generate_binary_texture()
+
         output = np.zeros_like(frame)
 
         color_layer = np.zeros_like(self.binary_texture)

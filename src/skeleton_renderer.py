@@ -23,6 +23,7 @@ class SkeletonRenderer:
         if not landmarks:
             return canvas
 
+        # 1. Draw bones (connections)
         for a, b in self.connections:
             lmA, lmB = landmarks[a], landmarks[b]
             if lmA["vis"] < 0.4 or lmB["vis"] < 0.4:
@@ -30,16 +31,27 @@ class SkeletonRenderer:
             
             x1, y1, p1 = self._project(lmA)
             x2, y2, p2 = self._project(lmB)
-            thickness = max(1, int(2 * min(p1, p2))) # Thinner lines
-
-            # Draw just ONE thin sharp line (the blur in main.py handles the glow)
+            thickness = max(1, int(2 * min(p1, p2)))
             cv2.line(canvas, (x1, y1), (x2, y2), color, thickness) 
 
+        # 2. Draw glowing joint dots with 0/1 clusters
+        import random
         for lm in landmarks:
             if lm["vis"] < 0.4:
                 continue
             x, y, p = self._project(lm)
-            radius = max(2, int(3 * p)) # Smaller dots
+            radius = max(3, int(5 * p)) # slightly bigger radius
+            
+            # Draw the solid white core
             cv2.circle(canvas, (x, y), radius, (255, 255, 255), -1)
+            
+            # Draw tiny 0s and 1s floating around the joint
+            for _ in range(3): # 3 characters per joint
+                offset_x = random.randint(-8, 8)
+                offset_y = random.randint(-8, 8)
+                char = "1" if random.random() > 0.5 else "0"
+                # Make the text color slightly dimmer than the core
+                cv2.putText(canvas, char, (x + offset_x, y + offset_y), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.25, color, 1)
 
         return canvas
